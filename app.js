@@ -315,9 +315,9 @@ function showCardModal(cardName) {
   modal.className = "active";
   modal.innerHTML = `
     <div class="modal-card">
-      <img src="assets/${card.name}.png" alt="${card.name}" style="width:210px;border-radius:14px;">
-      <div style="font-size:22px;font-weight:bold;color:var(--accent);">${card.name.charAt(0).toUpperCase()+card.name.slice(1)}</div>
-      <div style="margin-top:10px;font-size:17px;color:var(--text-muted);">Güç: ${card.power}</div>
+      <img src="assets/${card.name}.png" alt="${card.name}" style="width:380px;max-width:96vw;border-radius:18px;box-shadow:0 4px 24px #ff6a1f44;">
+      <div style="font-size:28px;font-weight:bold;color:var(--accent);margin-top:16px;">${card.name.charAt(0).toUpperCase()+card.name.slice(1)}</div>
+      <div style="margin-top:12px;font-size:21px;color:var(--text-muted);">Güç: ${card.power}</div>
     </div>
   `;
   document.body.appendChild(modal);
