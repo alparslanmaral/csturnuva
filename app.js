@@ -78,7 +78,7 @@ function render() {
 // --- Giriş ekranı ---
 function renderLogin() {
   app.innerHTML = `
-    <h1 style="color:var(--accent);font-size:2rem;margin-bottom:18px;">KART OYUNU GİRİŞ</h1>
+    <h1 style="color:var(--accent);font-size:2rem;margin-bottom:18px;">Maral Cards® 2025</h1>
     <div>
       <div class="input-group">
         <label>Kullanıcı Adı:</label>
