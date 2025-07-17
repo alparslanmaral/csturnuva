@@ -1,15 +1,15 @@
 // --- Kullanıcılar ---
 const userList = [
-  { username: 'caner', password: '1234' },
-  { username: 'cahit', password: '2345' },
-  { username: 'arda', password: '3456' },
-  { username: 'daniel', password: '4567' },
-  { username: 'alparslan', password: '5678' },
-  { username: 'arif', password: '6789' },
-  { username: 'bekir', password: '7890' },
-  { username: 'hami', password: '8901' },
-  { username: 'ali', password: '9012' },
-  { username: 'mert', password: '0123' }
+  { username: 'canerpehlivan', password: 'alikoçistifa' },
+  { username: 'calo', password: 'hafebayo36' },
+  { username: 'arda', password: 'orkunkökçü10' },
+  { username: 'daniel', password: '6taneatılırmıbe' },
+  { username: 'alp', password: '361881' },
+  { username: 'arif', password: 'playstationsucks' },
+  { username: 'bekir', password: 'gtx1070ti' },
+  { username: 'hami', password: 'catch' },
+  { username: 'ali', password: 'hamsikoydumtavaya' },
+  { username: 'mert', password: 'officeoynayangay' }
 ];
 
 // --- Kartlar ---
