@@ -56,7 +56,7 @@ let scores = {
 
 // --- Kullanıcı oturumu ve koleksiyon ---
 let currentUser = null;
-let userCollections = {}; // { username: [kartAdi, ...] }
+let userCollections = {};
 
 const app = document.getElementById('app');
 
@@ -72,17 +72,19 @@ function render() {
 // --- Giriş ekranı ---
 function renderLogin() {
   app.innerHTML = `
-    <h1>Kart Oyunu Giriş</h1>
-    <div class="input-group">
-      <label>Kullanıcı Adı:</label>
-      <input type="text" id="login-username" autocomplete="off">
+    <h1 style="color:var(--accent);font-size:2rem;margin-bottom:18px;">KART OYUNU GİRİŞ</h1>
+    <div>
+      <div class="input-group">
+        <label>Kullanıcı Adı:</label>
+        <input type="text" id="login-username" autocomplete="off">
+      </div>
+      <div class="input-group">
+        <label>Şifre:</label>
+        <input type="password" id="login-password" autocomplete="off">
+      </div>
+      <button id="login-btn">Giriş Yap</button>
+      <div id="login-error" class="error" style="display:none"></div>
     </div>
-    <div class="input-group">
-      <label>Şifre:</label>
-      <input type="password" id="login-password" autocomplete="off">
-    </div>
-    <button id="login-btn">Giriş Yap</button>
-    <div id="login-error" class="error" style="display:none"></div>
   `;
   document.getElementById('login-btn').onclick = tryLogin;
 }
@@ -108,8 +110,8 @@ function renderMain(page = "home") {
       <button id="nav-packages">Paketler</button>
       <button id="nav-collection">Koleksiyon</button>
       <button id="nav-score">Skor Tablosu</button>
-      <span style="margin-left:auto;color:#666;font-weight:bold;">${currentUser}</span>
-      <button id="nav-logout" style="background:#ad1d1d;">Çıkış</button>
+      <span style="margin-left:auto;color:var(--accent);font-weight:bold;">${currentUser}</span>
+      <button id="nav-logout" class="logout-btn">Çıkış</button>
     </div>
     <div id="main-content"></div>
   `;
@@ -125,100 +127,121 @@ function renderMain(page = "home") {
 
 function renderHome() {
   document.getElementById('main-content').innerHTML = `
-    <h2>Hoşgeldin, ${currentUser}!</h2>
-    <p>Oyun menüsünden paket açabilir, koleksiyonunu görebilir veya skor tablosunu inceleyebilirsin.</p>
+    <div class="panel" style="text-align:center;">
+      <h2 style="margin-bottom:10px;color:var(--accent);">Hoşgeldin, ${currentUser}!</h2>
+      <p style="color:var(--text-muted);font-size:1.08rem;">Oyun menüsünden paket açabilir, koleksiyonunu görebilir veya skor tablosunu inceleyebilirsin.</p>
+    </div>
   `;
 }
 
-// --- Paketler ve slider mekaniği ---
+// --- Paketler ve yeni modal açma mekanikleri ---
 function renderPackages() {
-  let html = `<h2>Paketler</h2><div class="pack-list">`;
+  let html = `<h2 class="slider-title">Paketler</h2><div class="pack-list">`;
   packs.forEach((p, i) => {
     html += `
       <div class="pack" data-pack="${i}">
         <img src="${p.img}" alt="Paket">
-        <div style="font-size:16px;font-weight:bold;margin-bottom:6px;">${p.name}</div>
-        <div style="font-size:15px;color:#666;">${p.cards.map(cn => `${cn.charAt(0).toUpperCase()+cn.slice(1)}`).join(", ")}</div>
-        <button class="open-pack-btn" data-pack="${i}" style="margin-top:10px;">Paket Aç</button>
+        <div style="font-size:16px;font-weight:bold;color:var(--accent);margin-bottom:6px;">${p.name}</div>
+        <div style="font-size:15px;color:var(--text-muted);">${p.cards.map(cn => `${cn.charAt(0).toUpperCase()+cn.slice(1)}`).join(", ")}</div>
+        <button class="open-pack-btn" data-pack="${i}">Paket Aç</button>
       </div>
     `;
   });
   html += `</div><div id="case-opening-area"></div>`;
   document.getElementById('main-content').innerHTML = html;
+
   document.querySelectorAll('.open-pack-btn').forEach(btn => {
-    btn.onclick = () => renderCaseOpening(parseInt(btn.dataset.pack, 10));
+    btn.onclick = () => showPackModal(parseInt(btn.dataset.pack, 10));
+  });
+  document.querySelectorAll('.pack img').forEach(img => {
+    img.onclick = () => {
+      const idx = img.parentElement.getAttribute('data-pack');
+      showPackModal(parseInt(idx, 10));
+    };
   });
 }
 
-// --- Bar animasyonlu kasa açma ---
-function renderCaseOpening(packIdx) {
+// --- Paket büyük görsel modalı ---
+function showPackModal(packIdx) {
   const pack = packs[packIdx];
-  const unopenedCards = pack.cards.filter(cn => !userCollections[currentUser].includes(cn));
-  if (unopenedCards.length === 0) {
-    document.getElementById('case-opening-area').innerHTML = `<div style="margin-top:24px;color:#b00;font-weight:bold;">Bu paketteki tüm kartları açtınız.</div>`;
-    return;
-  }
+  const modal = document.createElement('div');
+  modal.id = "pack-modal";
+  modal.innerHTML = `
+    <div class="modal-card" style="text-align:center;">
+      <img src="${pack.img}" alt="Paket" style="width:220px;max-width:90vw;border-radius:16px;box-shadow:0 2px 16px #ff6a1f22;">
+      <div style="font-size:22px;font-weight:bold;color:var(--accent);margin-top:18px;">${pack.name}</div>
+      <div style="margin-top:8px;font-size:16px;color:var(--text-muted);">${pack.cards.map(cn => `${cn.charAt(0).toUpperCase()+cn.slice(1)}`).join(", ")}</div>
+      <div style="margin-top:18px;color:var(--accent-light);font-weight:bold;">Paketi açmak için resme tıklayın</div>
+    </div>
+  `;
+  modal.querySelector('img').onclick = (e) => {
+    e.stopPropagation();
+    document.body.removeChild(modal);
+    showSliderModal(packIdx);
+  };
+  modal.onclick = () => {
+    document.body.removeChild(modal);
+  };
+  document.body.appendChild(modal);
+}
 
-  // Nadire göre bar dizisi oluştur
+// --- Slider animasyonu modalı ---
+function showSliderModal(packIdx) {
+  const pack = packs[packIdx];
+  const cardWidth = 110;
+  const cardHeight = 155;
+  const possibleCards = pack.cards;
+
+  // Bar dizisi oluştur
   let cardArray = [];
-  unopenedCards.forEach(cardName => {
+  possibleCards.forEach(cardName => {
     let card = cards.find(c => c.name === cardName);
-    let weight = Math.max(1, 220 - card.power); // Güçlü kart az tekrar
+    let weight = Math.max(1, 220 - card.power);
     for (let i = 0; i < weight; i += 35) {
       cardArray.push(cardName);
     }
   });
   while (cardArray.length < 40) {
-    cardArray.push(unopenedCards[Math.floor(Math.random()*unopenedCards.length)]);
+    cardArray.push(possibleCards[Math.floor(Math.random()*possibleCards.length)]);
   }
   cardArray = shuffle(cardArray);
 
-  // Bar HTML
-  let barHtml = `
-    <div id="case-bar-wrap" style="
-      position:relative;
-      margin:36px 0 18px 0;
-      width:100%;
-      max-width:620px;
-      height:140px;
-      overflow:hidden;
-      border-radius:16px;
-      background:linear-gradient(90deg,#d8ecff,#f4faff 60%,#d8ecff);
-      box-shadow:0 3px 30px rgba(0,0,0,0.12);margin-left:auto;margin-right:auto;">
-      <div id="case-bar" style="display:flex;align-items:end;height:100%;transition:none;">
-        ${cardArray.map(cardName => `
-          <div style="width:100px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:end;padding:0;">
-            <img src="assets/${cardName}.png" style="width:90px;height:120px;object-fit:cover;border-radius:8px;box-shadow:0 1px 8px rgba(0,0,0,0.11);margin:0;">
-            <div style="font-size:14px;font-weight:bold;color:#222;margin-top:2px;margin-bottom:2px;">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
-          </div>
-        `).join('')}
+  // Modal HTML
+  const modal = document.createElement('div');
+  modal.id = "slider-modal";
+  modal.innerHTML = `
+    <div class="modal-card" style="min-width:520px;">
+      <div class="slider-title" style="text-align:center;">Kart Açılıyor!</div>
+      <div id="case-bar-wrap" style="position:relative;width:100%;height:${cardHeight}px;">
+        <div id="case-bar" style="transition:none;">
+          ${cardArray.map(cardName => `
+            <div class="card-bar-card">
+              <img src="assets/${cardName}.png">
+              <div class="card-name">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="center-indicator"></div>
       </div>
-      <div style="
-        position:absolute;top:0;left:50%;transform:translateX(-50%);
-        width:100px;height:100%;border:3px solid #2b6cb0;border-radius:10px;
-        pointer-events:none;box-sizing:border-box;z-index:2;">
+      <div id="case-bar-btns" style="text-align:center;">
+        <button id="start-case-opening">Açılışı Başlat</button>
       </div>
+      <div id="case-bar-result"></div>
     </div>
-    <div id="case-bar-btns" style="text-align:center;">
-      <button id="start-case-opening">Açılışı Başlat</button>
-    </div>
-    <div id="case-bar-result"></div>
   `;
-  document.getElementById('case-opening-area').innerHTML = barHtml;
-  document.getElementById('start-case-opening').onclick = () => startCaseBarOpening(cardArray, packIdx);
+  document.body.appendChild(modal);
+  document.getElementById('start-case-opening').onclick = () => startCaseBarOpening(cardArray, packIdx, cardWidth, modal);
 }
 
 // --- Bar kaydırma ve durdurma algoritması ---
-function startCaseBarOpening(cardArray, packIdx) {
-  const bar = document.getElementById('case-bar');
-  const barWrap = document.getElementById('case-bar-wrap');
-  const cardWidth = 100; // yukarıda width:100px!
+function startCaseBarOpening(cardArray, packIdx, cardWidth, modal) {
+  const bar = modal.querySelector('#case-bar');
+  const barWrap = modal.querySelector('#case-bar-wrap');
   let velocity = 60;
   let slowing = false;
   let frame = 0;
   const barCenterPx = barWrap.offsetWidth / 2 - cardWidth / 2;
 
-  // Rastgele bir indeks seç, bar tam ortada duracak şekilde offset hesapla
   let safeMargin = 4;
   let randomIdx = Math.floor(Math.random() * (cardArray.length - safeMargin*2)) + safeMargin;
   let stopOffset = randomIdx * cardWidth - barCenterPx;
@@ -235,41 +258,38 @@ function startCaseBarOpening(cardArray, packIdx) {
       bar.style.transition = "transform 0.5s cubic-bezier(.8,-0.6,.24,1.65)";
       bar.style.transform = `translateX(${-stopOffset}px)`;
       setTimeout(() => {
-        // Tam ortadaki kutunun altında kalan kartın indexi:
         const idxAtCenter = Math.round((stopOffset + barCenterPx) / cardWidth);
         const wonCardName = cardArray[idxAtCenter];
-        finishCaseOpening(wonCardName, packIdx);
+        finishCaseOpening(wonCardName, packIdx, modal);
       }, 500);
       return;
     }
     bar.style.transform = `translateX(${-currentOffset}px)`;
   }, 16);
 
-  document.getElementById('start-case-opening').disabled = true;
+  modal.querySelector('#start-case-opening').disabled = true;
 }
 
 // --- Kartı koleksiyona ekle ve sonucu göster ---
-function finishCaseOpening(cardName, packIdx) {
+function finishCaseOpening(cardName, packIdx, modal) {
   if (!userCollections[currentUser].includes(cardName)) {
     userCollections[currentUser].push(cardName);
   }
-  document.getElementById('case-bar-result').innerHTML = `
-    <div style="margin-top:32px;">
-      <div style="font-size:22px;font-weight:bold;color:#2b6cb0;">Tebrikler!</div>
-      <div style="margin-top:8px;">
-        <img src="assets/${cardName}.png" style="width:140px;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.14);">
-      </div>
-      <div style="font-size:18px;margin-top:10px;font-weight:bold;">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
-      <div style="font-size:16px;margin-top:5px;color:#555;">Koleksiyonuna yeni kart eklendi.</div>
-      <button onclick="renderPackages()" style="margin-top:16px;">Paketlere Dön</button>
-      <button onclick="renderCollection()" style="margin-top:16px;margin-left:8px;">Koleksiyonumu Gör</button>
+  modal.querySelector('#case-bar-result').innerHTML = `
+    <div class="panel" style="text-align:center;">
+      <div class="result-title">Tebrikler!</div>
+      <img src="assets/${cardName}.png" style="width:210px;border-radius:14px;box-shadow:0 2px 12px #ff6a1f44;" alt="${cardName}">
+      <div class="card-name" style="font-size:18px;margin-top:10px;">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
+      <div class="result-desc">Koleksiyonuna yeni kart eklendi.</div>
+      <button onclick="document.body.removeChild(document.getElementById('slider-modal'));renderPackages()">Paketlere Dön</button>
+      <button onclick="document.body.removeChild(document.getElementById('slider-modal'));renderCollection()">Koleksiyonumu Gör</button>
     </div>
   `;
 }
 
 // --- Koleksiyon ---
 function renderCollection() {
-  let html = `<h2>Koleksiyonum</h2><div class="card-list">`;
+  let html = `<h2 class="slider-title">Koleksiyonum</h2><div class="card-list">`;
   cards.forEach(card => {
     const opened = userCollections[currentUser].includes(card.name);
     html += `
@@ -294,9 +314,9 @@ function showCardModal(cardName) {
   modal.className = "active";
   modal.innerHTML = `
     <div class="modal-card">
-      <img src="assets/${card.name}.png" alt="${card.name}">
-      <div style="font-size:22px;font-weight:bold;">${card.name.charAt(0).toUpperCase()+card.name.slice(1)}</div>
-      <div style="margin-top:10px;font-size:17px;color:#444;">Güç: ${card.power}</div>
+      <img src="assets/${card.name}.png" alt="${card.name}" style="width:210px;border-radius:14px;">
+      <div style="font-size:22px;font-weight:bold;color:var(--accent);">${card.name.charAt(0).toUpperCase()+card.name.slice(1)}</div>
+      <div style="margin-top:10px;font-size:17px;color:var(--text-muted);">Güç: ${card.power}</div>
     </div>
   `;
   document.body.appendChild(modal);
@@ -309,7 +329,7 @@ function showCardModal(cardName) {
 function renderScoreTable() {
   const sorted = Object.entries(scores)
     .sort((a,b) => b[1] - a[1]);
-  let html = `<h2>Skor Tablosu</h2>
+  let html = `<h2 class="slider-title">Skor Tablosu</h2>
     <table class="score-table">
       <thead>
         <tr><th>#</th><th>Kart</th><th>Puan</th></tr>
