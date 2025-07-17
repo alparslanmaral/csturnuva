@@ -1,4 +1,4 @@
-// Kullanıcı adı ve şifre listesi
+// --- Kullanıcılar ---
 const userList = [
   { username: 'caner', password: '1234' },
   { username: 'cahit', password: '2345' },
@@ -12,6 +12,7 @@ const userList = [
   { username: 'mert', password: '0123' }
 ];
 
+// --- Kartlar ---
 const cards = [
   { name: "caner", power: 120 },
   { name: "cahit", power: 160 },
@@ -25,8 +26,7 @@ const cards = [
   { name: "mert", power: 200 }
 ];
 
-// Kart PNG'leri: assets/kartadi.png
-
+// --- Paketler ---
 const packs = [
   {
     name: "Cennetten Kovulanlar Tam Liste Paketi",
@@ -40,7 +40,7 @@ const packs = [
   }
 ];
 
-// Skor tablosu başlangıcı
+// --- Skorlar ---
 let scores = {
   caner: 0,
   cahit: 0,
@@ -54,13 +54,13 @@ let scores = {
   mert: 0
 };
 
-// Kullanıcı oturumu ve açılan kartlar
+// --- Kullanıcı oturumu ve koleksiyon ---
 let currentUser = null;
 let userCollections = {}; // { username: [kartAdi, ...] }
 
 const app = document.getElementById('app');
 
-// Ana render fonksiyonu
+// --- Ana render fonksiyonu ---
 function render() {
   if (!currentUser) {
     renderLogin();
@@ -69,6 +69,7 @@ function render() {
   }
 }
 
+// --- Giriş ekranı ---
 function renderLogin() {
   app.innerHTML = `
     <h1>Kart Oyunu Giriş</h1>
@@ -100,6 +101,7 @@ function tryLogin() {
   render();
 }
 
+// --- Ana menü ve sayfa ---
 function renderMain(page = "home") {
   app.innerHTML = `
     <div class="navbar">
@@ -128,6 +130,7 @@ function renderHome() {
   `;
 }
 
+// --- Paketler ve slider mekaniği ---
 function renderPackages() {
   let html = `<h2>Paketler</h2><div class="pack-list">`;
   packs.forEach((p, i) => {
@@ -140,58 +143,131 @@ function renderPackages() {
       </div>
     `;
   });
-  html += `</div><div id="opened-cards-list"></div>`;
+  html += `</div><div id="case-opening-area"></div>`;
   document.getElementById('main-content').innerHTML = html;
   document.querySelectorAll('.open-pack-btn').forEach(btn => {
-    btn.onclick = () => openPack(parseInt(btn.dataset.pack, 10));
+    btn.onclick = () => renderCaseOpening(parseInt(btn.dataset.pack, 10));
   });
 }
 
-function openPack(packIdx) {
+// --- Bar animasyonlu kasa açma ---
+function renderCaseOpening(packIdx) {
   const pack = packs[packIdx];
-  // Kartları rastgele seç, nadirlik algoritması
   const unopenedCards = pack.cards.filter(cn => !userCollections[currentUser].includes(cn));
   if (unopenedCards.length === 0) {
-    alert("Bu paketteki tüm kartları açtınız.");
+    document.getElementById('case-opening-area').innerHTML = `<div style="margin-top:24px;color:#b00;font-weight:bold;">Bu paketteki tüm kartları açtınız.</div>`;
     return;
   }
-  // Nadirlik algoritması: güç arttıkça çıkma ihtimali azalır
-  let weights = unopenedCards.map(cardName => {
+
+  // Nadire göre bar dizisi oluştur
+  let cardArray = [];
+  unopenedCards.forEach(cardName => {
     let card = cards.find(c => c.name === cardName);
-    return Math.max(1, 220 - card.power); // En yüksek güç kartına en az ağırlık
+    let weight = Math.max(1, 220 - card.power); // Güçlü kart az tekrar
+    for (let i = 0; i < weight; i += 35) {
+      cardArray.push(cardName);
+    }
   });
-  let sum = weights.reduce((a, b) => a + b, 0);
-  let rand = Math.floor(Math.random() * sum);
-  let idx = 0, acc = 0;
-  for (; idx < weights.length; idx++) {
-    acc += weights[idx];
-    if (rand < acc) break;
+  while (cardArray.length < 40) {
+    cardArray.push(unopenedCards[Math.floor(Math.random()*unopenedCards.length)]);
   }
-  const cardName = unopenedCards[idx];
-  userCollections[currentUser].push(cardName);
-  showOpenedCard(cardName);
+  cardArray = shuffle(cardArray);
+
+  // Bar HTML
+  let barHtml = `
+    <div id="case-bar-wrap" style="
+      position:relative;
+      margin:36px 0 18px 0;
+      width:100%;
+      max-width:620px;
+      height:140px;
+      overflow:hidden;
+      border-radius:16px;
+      background:linear-gradient(90deg,#d8ecff,#f4faff 60%,#d8ecff);
+      box-shadow:0 3px 30px rgba(0,0,0,0.12);margin-left:auto;margin-right:auto;">
+      <div id="case-bar" style="display:flex;align-items:end;height:100%;transition:none;">
+        ${cardArray.map(cardName => `
+          <div style="width:100px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:end;padding:0;">
+            <img src="assets/${cardName}.png" style="width:90px;height:120px;object-fit:cover;border-radius:8px;box-shadow:0 1px 8px rgba(0,0,0,0.11);margin:0;">
+            <div style="font-size:14px;font-weight:bold;color:#222;margin-top:2px;margin-bottom:2px;">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="
+        position:absolute;top:0;left:50%;transform:translateX(-50%);
+        width:100px;height:100%;border:3px solid #2b6cb0;border-radius:10px;
+        pointer-events:none;box-sizing:border-box;z-index:2;">
+      </div>
+    </div>
+    <div id="case-bar-btns" style="text-align:center;">
+      <button id="start-case-opening">Açılışı Başlat</button>
+    </div>
+    <div id="case-bar-result"></div>
+  `;
+  document.getElementById('case-opening-area').innerHTML = barHtml;
+  document.getElementById('start-case-opening').onclick = () => startCaseBarOpening(cardArray, packIdx);
 }
 
-function showOpenedCard(cardName) {
-  const card = cards.find(c => c.name === cardName);
-  const modal = document.createElement('div');
-  modal.id = "opened-card-modal";
-  modal.className = "active";
-  modal.innerHTML = `
-    <div class="modal-card">
-      <img src="assets/${card.name}.png" alt="${card.name}">
-      <div style="font-size:20px;font-weight:bold;">${card.name.charAt(0).toUpperCase()+card.name.slice(1)}</div>
-      <div style="margin-top:6px;font-size:16px;color:#555;">Güç: ${card.power}</div>
-      <div style="margin-top:8px;font-size:14px;color:#44a;">Tebrikler! Koleksiyonuna yeni bir kart eklendi.</div>
+// --- Bar kaydırma ve durdurma algoritması ---
+function startCaseBarOpening(cardArray, packIdx) {
+  const bar = document.getElementById('case-bar');
+  const barWrap = document.getElementById('case-bar-wrap');
+  const cardWidth = 100; // yukarıda width:100px!
+  let velocity = 60;
+  let slowing = false;
+  let frame = 0;
+  const barCenterPx = barWrap.offsetWidth / 2 - cardWidth / 2;
+
+  // Rastgele bir indeks seç, bar tam ortada duracak şekilde offset hesapla
+  let safeMargin = 4;
+  let randomIdx = Math.floor(Math.random() * (cardArray.length - safeMargin*2)) + safeMargin;
+  let stopOffset = randomIdx * cardWidth - barCenterPx;
+
+  let currentOffset = 0;
+  let interval = setInterval(() => {
+    frame++;
+    if (!slowing && frame > 40) slowing = true;
+    if (slowing && velocity > 4) velocity *= 0.96;
+    currentOffset += velocity;
+
+    if (slowing && currentOffset >= stopOffset) {
+      clearInterval(interval);
+      bar.style.transition = "transform 0.5s cubic-bezier(.8,-0.6,.24,1.65)";
+      bar.style.transform = `translateX(${-stopOffset}px)`;
+      setTimeout(() => {
+        // Tam ortadaki kutunun altında kalan kartın indexi:
+        const idxAtCenter = Math.round((stopOffset + barCenterPx) / cardWidth);
+        const wonCardName = cardArray[idxAtCenter];
+        finishCaseOpening(wonCardName, packIdx);
+      }, 500);
+      return;
+    }
+    bar.style.transform = `translateX(${-currentOffset}px)`;
+  }, 16);
+
+  document.getElementById('start-case-opening').disabled = true;
+}
+
+// --- Kartı koleksiyona ekle ve sonucu göster ---
+function finishCaseOpening(cardName, packIdx) {
+  if (!userCollections[currentUser].includes(cardName)) {
+    userCollections[currentUser].push(cardName);
+  }
+  document.getElementById('case-bar-result').innerHTML = `
+    <div style="margin-top:32px;">
+      <div style="font-size:22px;font-weight:bold;color:#2b6cb0;">Tebrikler!</div>
+      <div style="margin-top:8px;">
+        <img src="assets/${cardName}.png" style="width:140px;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.14);">
+      </div>
+      <div style="font-size:18px;margin-top:10px;font-weight:bold;">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
+      <div style="font-size:16px;margin-top:5px;color:#555;">Koleksiyonuna yeni kart eklendi.</div>
+      <button onclick="renderPackages()" style="margin-top:16px;">Paketlere Dön</button>
+      <button onclick="renderCollection()" style="margin-top:16px;margin-left:8px;">Koleksiyonumu Gör</button>
     </div>
   `;
-  document.body.appendChild(modal);
-  modal.onclick = () => {
-    document.body.removeChild(modal);
-    renderPackages();
-  };
 }
 
+// --- Koleksiyon ---
 function renderCollection() {
   let html = `<h2>Koleksiyonum</h2><div class="card-list">`;
   cards.forEach(card => {
@@ -206,7 +282,6 @@ function renderCollection() {
   });
   html += `</div>`;
   document.getElementById('main-content').innerHTML = html;
-  // Kart büyütme
   document.querySelectorAll('.card:not(.blurred)').forEach(cardEl => {
     cardEl.onclick = () => showCardModal(cardEl.dataset.card);
   });
@@ -230,10 +305,10 @@ function showCardModal(cardName) {
   };
 }
 
+// --- Skor Tablosu ---
 function renderScoreTable() {
-  // Skorları en yüksekten düşük puana göre sırala
   const sorted = Object.entries(scores)
-    .sort((a,b) => b[1] - a[1]); // [ [name, score], ... ]
+    .sort((a,b) => b[1] - a[1]);
   let html = `<h2>Skor Tablosu</h2>
     <table class="score-table">
       <thead>
@@ -257,10 +332,18 @@ function logout() {
   render();
 }
 
-// Skorları koddan değiştirince tablo otomatik sıralanır
 window.updateScores = function(newScores) {
   Object.assign(scores, newScores);
 }
 
-// Başlat
+function shuffle(arr) {
+  let a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// --- Başlat ---
 render();
