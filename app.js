@@ -58,14 +58,20 @@ let scores = {
 let currentUser = null;
 let userCollections = {};
 
+// --- Alt menü aktif sayfa ---
+let activeBottomMenu = "packages";
+
 const app = document.getElementById('app');
+const bottomMenuRoot = document.getElementById('bottom-menu-root');
 
 // --- Ana render fonksiyonu ---
 function render() {
   if (!currentUser) {
     renderLogin();
+    bottomMenuRoot.innerHTML = ""; // Login ekranında alt menü yok
   } else {
-    renderMain();
+    renderMain(activeBottomMenu);
+    renderBottomMenu(activeBottomMenu);
   }
 }
 
@@ -104,52 +110,55 @@ function tryLogin() {
 }
 
 // --- Ana menü ve sayfa ---
-function renderMain(page = "home") {
+function renderMain(page = "packages") {
   app.innerHTML = `
     <div class="navbar">
-      <button id="nav-packages">Paketler</button>
-      <button id="nav-collection">Koleksiyon</button>
-      <button id="nav-score">Skor Tablosu</button>
+      <button id="nav-packages" class="${page==="packages"?"active":""}">Paketler</button>
+      <button id="nav-collection" class="${page==="collection"?"active":""}">Koleksiyon</button>
+      <button id="nav-score" class="${page==="score"?"active":""}">Skor Tablosu</button>
       <span style="margin-left:auto;color:var(--accent);font-weight:bold;">${currentUser}</span>
       <button id="nav-logout" class="logout-btn">Çıkış</button>
     </div>
     <div id="main-content"></div>
   `;
-  document.getElementById('nav-packages').onclick = () => renderMain("packages");
-  document.getElementById('nav-collection').onclick = () => renderMain("collection");
-  document.getElementById('nav-score').onclick = () => renderMain("score");
+  document.getElementById('nav-packages').onclick = () => {activeBottomMenu="packages"; render();};
+  document.getElementById('nav-collection').onclick = () => {activeBottomMenu="collection"; render();};
+  document.getElementById('nav-score').onclick = () => {activeBottomMenu="score"; render();};
   document.getElementById('nav-logout').onclick = logout;
-  if (page === "home") renderHome();
   if (page === "packages") renderPackages();
   if (page === "collection") renderCollection();
   if (page === "score") renderScoreTable();
 }
 
-function renderHome() {
-  document.getElementById('main-content').innerHTML = `
-    <div class="panel" style="text-align:center;">
-      <h2 style="margin-bottom:10px;color:var(--accent);">Hoşgeldin, ${currentUser}!</h2>
-      <p style="color:var(--text-muted);font-size:1.08rem;">Oyun menüsünden paket açabilir, koleksiyonunu görebilir veya skor tablosunu inceleyebilirsin.</p>
+// --- Alt menü render ---
+function renderBottomMenu(selected) {
+  bottomMenuRoot.innerHTML = `
+    <div class="bottom-navbar">
+      <button class="nav-btn${selected==="packages"?" active":""}" id="bm-packages">Paketler</button>
+      <button class="nav-btn${selected==="collection"?" active":""}" id="bm-collection">Koleksiyon</button>
+      <button class="nav-btn${selected==="score"?" active":""}" id="bm-score">Skor Tablosu</button>
+      <button class="nav-btn" id="bm-logout">Çıkış</button>
     </div>
   `;
+  document.getElementById('bm-packages').onclick = () => {activeBottomMenu="packages"; render();};
+  document.getElementById('bm-collection').onclick = () => {activeBottomMenu="collection"; render();};
+  document.getElementById('bm-score').onclick = () => {activeBottomMenu="score"; render();};
+  document.getElementById('bm-logout').onclick = logout;
 }
 
-// --- Paketler ve yeni modal açma mekanikleri ---
 function renderPackages() {
-  let html = `<h2 class="slider-title">Paketler</h2><div class="pack-list">`;
+  let html = `<h2 style="color:var(--accent);margin-bottom:24px;">Paketler</h2><div class="pack-list">`;
   packs.forEach((p, i) => {
     html += `
       <div class="pack" data-pack="${i}">
         <img src="${p.img}" alt="Paket">
         <div style="font-size:16px;font-weight:bold;color:var(--accent);margin-bottom:6px;">${p.name}</div>
-        <div style="font-size:15px;color:var(--text-muted);">${p.cards.map(cn => `${cn.charAt(0).toUpperCase()+cn.slice(1)}`).join(", ")}</div>
         <button class="open-pack-btn" data-pack="${i}">Paket Aç</button>
       </div>
     `;
   });
   html += `</div><div id="case-opening-area"></div>`;
   document.getElementById('main-content').innerHTML = html;
-
   document.querySelectorAll('.open-pack-btn').forEach(btn => {
     btn.onclick = () => showPackModal(parseInt(btn.dataset.pack, 10));
   });
@@ -161,17 +170,15 @@ function renderPackages() {
   });
 }
 
-// --- Paket büyük görsel modalı ---
 function showPackModal(packIdx) {
   const pack = packs[packIdx];
   const modal = document.createElement('div');
   modal.id = "pack-modal";
   modal.innerHTML = `
     <div class="modal-card" style="text-align:center;">
-      <img src="${pack.img}" alt="Paket" style="width:220px;max-width:90vw;border-radius:16px;box-shadow:0 2px 16px #ff6a1f22;">
+      <img src="${pack.img}" alt="Paket" style="width:220px;max-width:90vw;border-radius:16px;box-shadow:0 2px 16px #21e78622;">
       <div style="font-size:22px;font-weight:bold;color:var(--accent);margin-top:18px;">${pack.name}</div>
-      <div style="margin-top:8px;font-size:16px;color:var(--text-muted);">${pack.cards.map(cn => `${cn.charAt(0).toUpperCase()+cn.slice(1)}`).join(", ")}</div>
-      <div style="margin-top:18px;color:var(--accent-light);font-weight:bold;">Paketi açmak için resme tıklayın</div>
+      <div style="margin-top:18px;color:var(--accent);font-weight:bold;">Paketi açmak için resme tıklayın</div>
     </div>
   `;
   modal.querySelector('img').onclick = (e) => {
@@ -185,14 +192,12 @@ function showPackModal(packIdx) {
   document.body.appendChild(modal);
 }
 
-// --- Slider animasyonu modalı ---
 function showSliderModal(packIdx) {
   const pack = packs[packIdx];
   const cardWidth = 110;
   const cardHeight = 155;
   const possibleCards = pack.cards;
 
-  // Bar dizisi oluştur
   let cardArray = [];
   possibleCards.forEach(cardName => {
     let card = cards.find(c => c.name === cardName);
@@ -206,18 +211,17 @@ function showSliderModal(packIdx) {
   }
   cardArray = shuffle(cardArray);
 
-  // Modal HTML
   const modal = document.createElement('div');
   modal.id = "slider-modal";
   modal.innerHTML = `
     <div class="modal-card" style="min-width:520px;">
-      <div class="slider-title" style="text-align:center;">Kart Açılıyor!</div>
+      <div class="slider-title" style="text-align:center;color:var(--accent);">Kart Açılıyor!</div>
       <div id="case-bar-wrap" style="position:relative;width:100%;height:${cardHeight}px;">
         <div id="case-bar" style="transition:none;">
           ${cardArray.map(cardName => `
             <div class="card-bar-card">
               <img src="assets/${cardName}.png">
-              <div class="card-name">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
+              <div class="card-name" style="color:var(--accent);">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
             </div>
           `).join('')}
         </div>
@@ -233,7 +237,6 @@ function showSliderModal(packIdx) {
   document.getElementById('start-case-opening').onclick = () => startCaseBarOpening(cardArray, packIdx, cardWidth, modal);
 }
 
-// --- Bar kaydırma ve durdurma algoritması ---
 function startCaseBarOpening(cardArray, packIdx, cardWidth, modal) {
   const bar = modal.querySelector('#case-bar');
   const barWrap = modal.querySelector('#case-bar-wrap');
@@ -270,33 +273,31 @@ function startCaseBarOpening(cardArray, packIdx, cardWidth, modal) {
   modal.querySelector('#start-case-opening').disabled = true;
 }
 
-// --- Kartı koleksiyona ekle ve sonucu göster ---
 function finishCaseOpening(cardName, packIdx, modal) {
   if (!userCollections[currentUser].includes(cardName)) {
     userCollections[currentUser].push(cardName);
   }
   modal.querySelector('#case-bar-result').innerHTML = `
     <div class="panel" style="text-align:center;">
-      <div class="result-title">Tebrikler!</div>
-      <img src="assets/${cardName}.png" style="width:210px;border-radius:14px;box-shadow:0 2px 12px #ff6a1f44;" alt="${cardName}">
-      <div class="card-name" style="font-size:18px;margin-top:10px;">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
-      <div class="result-desc">Koleksiyonuna yeni kart eklendi.</div>
+      <div class="result-title" style="color:var(--accent);">Tebrikler!</div>
+      <img src="assets/${cardName}.png" style="width:210px;border-radius:14px;box-shadow:0 2px 12px #21e78644;" alt="${cardName}">
+      <div class="card-name" style="font-size:18px;margin-top:10px;color:var(--accent);">${cardName.charAt(0).toUpperCase()+cardName.slice(1)}</div>
+      <div class="result-desc" style="color:var(--text-muted);">Koleksiyonuna yeni kart eklendi.</div>
       <button onclick="document.body.removeChild(document.getElementById('slider-modal'));renderPackages()">Paketlere Dön</button>
       <button onclick="document.body.removeChild(document.getElementById('slider-modal'));renderCollection()">Koleksiyonumu Gör</button>
     </div>
   `;
 }
 
-// --- Koleksiyon ---
 function renderCollection() {
-  let html = `<h2 class="slider-title">Koleksiyonum</h2><div class="card-list">`;
+  let html = `<h2 style="color:var(--accent);margin-bottom:24px;">Koleksiyonum</h2><div class="card-list">`;
   cards.forEach(card => {
     const opened = userCollections[currentUser].includes(card.name);
     html += `
       <div class="card ${opened ? '' : 'blurred'}" data-card="${card.name}">
         <img src="assets/${card.name}.png" alt="${card.name}">
-        <div class="card-name">${card.name.charAt(0).toUpperCase()+card.name.slice(1)}</div>
-        <div class="card-power">Güç: ${card.power}</div>
+        <div class="card-name" style="color:var(--accent);">${card.name.charAt(0).toUpperCase()+card.name.slice(1)}</div>
+        <div class="card-power" style="color:var(--text-muted);">Güç: ${card.power}</div>
       </div>
     `;
   });
@@ -325,11 +326,10 @@ function showCardModal(cardName) {
   };
 }
 
-// --- Skor Tablosu ---
 function renderScoreTable() {
   const sorted = Object.entries(scores)
     .sort((a,b) => b[1] - a[1]);
-  let html = `<h2 class="slider-title">Skor Tablosu</h2>
+  let html = `<h2 style="color:var(--accent);margin-bottom:24px;">Skor Tablosu</h2>
     <table class="score-table">
       <thead>
         <tr><th>#</th><th>Kart</th><th>Puan</th></tr>
@@ -339,7 +339,7 @@ function renderScoreTable() {
   sorted.forEach(([name, score], idx) => {
     html += `<tr>
       <td>${idx+1}</td>
-      <td>${name.charAt(0).toUpperCase()+name.slice(1)}</td>
+      <td style="color:var(--accent);">${name.charAt(0).toUpperCase()+name.slice(1)}</td>
       <td>${score}</td>
     </tr>`;
   });
@@ -349,6 +349,7 @@ function renderScoreTable() {
 
 function logout() {
   currentUser = null;
+  activeBottomMenu = "packages";
   render();
 }
 
@@ -365,5 +366,4 @@ function shuffle(arr) {
   return a;
 }
 
-// --- Başlat ---
 render();
