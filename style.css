@@ -1,0 +1,186 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f5f5f5;
+}
+
+#app {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.07);
+}
+
+h1, h2 {
+  color: #333;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+
+input[type="text"], input[type="password"] {
+  padding: 8px;
+  width: 100%;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  margin-top: 4px;
+  font-size: 16px;
+}
+
+button {
+  padding: 10px 24px;
+  background: #2b6cb0;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-right: 8px;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+button:hover {
+  background: #234e77;
+}
+
+.navbar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card-list {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.card {
+  width: 120px;
+  height: 180px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #eee;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.16);
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+  filter: none;
+}
+
+.card .card-name {
+  text-align: center;
+  font-weight: bold;
+  padding: 4px 0;
+  background: #fff;
+  font-size: 16px;
+}
+
+.card .card-power {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  background: #f8f8f8;
+  border-top: 1px solid #e0e0e0;
+  padding-bottom: 2px;
+}
+
+.card.blurred img {
+  filter: blur(7px) grayscale(1);
+}
+
+.card.blurred .card-name,
+.card.blurred .card-power {
+  filter: blur(2px);
+  color: #bbb;
+}
+
+.pack-list {
+  display: flex;
+  gap: 32px;
+  margin-top: 18px;
+}
+.pack {
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+  background: #f9fafc;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  flex: 1;
+  transition: transform 0.2s;
+}
+.pack:hover {
+  background: #e5f1ff;
+  transform: scale(1.03);
+}
+
+.pack img {
+  width: 90px;
+  margin-bottom: 12px;
+}
+
+#opened-card-modal {
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 99;
+}
+#opened-card-modal.active {
+  display: flex;
+}
+.modal-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.15);
+  padding: 24px;
+  text-align: center;
+  width: 320px;
+  animation: grow 0.25s;
+}
+@keyframes grow {
+  0% { transform: scale(0.7); }
+  100% { transform: scale(1); }
+}
+.modal-card img {
+  width: 210px;
+  margin-bottom: 10px;
+}
+.score-table {
+  margin-top: 24px;
+  width: 100%;
+  border-collapse: collapse;
+}
+.score-table th, .score-table td {
+  padding: 10px 16px;
+  text-align: left;
+}
+.score-table th {
+  background: #e6f2ff;
+}
+.score-table tr:nth-child(even) td {
+  background: #f8f9fa;
+}
+.score-table tr:nth-child(odd) td {
+  background: #fff;
+}
+.error {
+  color: #ad1d1d;
+  margin-bottom: 16px;
+  font-weight: bold;
+  font-size: 15px;
+}
