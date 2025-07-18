@@ -112,19 +112,8 @@ function tryLogin() {
 // --- Ana menü ve sayfa ---
 function renderMain(page = "packages") {
   app.innerHTML = `
-    <div class="navbar">
-      <button id="nav-packages" class="${page==="packages"?"active":""}">Paketler</button>
-      <button id="nav-collection" class="${page==="collection"?"active":""}">Koleksiyon</button>
-      <button id="nav-score" class="${page==="score"?"active":""}">Skor Tablosu</button>
-      <span style="margin-left:auto;color:var(--accent);font-weight:bold;">${currentUser}</span>
-      <button id="nav-logout" class="logout-btn">Çıkış</button>
-    </div>
     <div id="main-content"></div>
   `;
-  document.getElementById('nav-packages').onclick = () => {activeBottomMenu="packages"; render();};
-  document.getElementById('nav-collection').onclick = () => {activeBottomMenu="collection"; render();};
-  document.getElementById('nav-score').onclick = () => {activeBottomMenu="score"; render();};
-  document.getElementById('nav-logout').onclick = logout;
   if (page === "packages") renderPackages();
   if (page === "collection") renderCollection();
   if (page === "score") renderScoreTable();
@@ -147,7 +136,13 @@ function renderBottomMenu(selected) {
 }
 
 function renderPackages() {
-  let html = `<h2 style="color:var(--accent);margin-bottom:24px;">Paketler</h2><div class="pack-list">`;
+  let html = `
+    <div style="width:100%;text-align:center;margin:32px 0 32px 0;">
+      <button class="button" id="show-rules-btn" style="margin:0 auto 20px auto;">Oyun Kuralları</button>
+    </div>
+    <h2 style="color:var(--accent);margin-bottom:24px;">Paketler</h2>
+    <div class="pack-list">
+  `;
   packs.forEach((p, i) => {
     html += `
       <div class="pack" data-pack="${i}">
@@ -159,6 +154,9 @@ function renderPackages() {
   });
   html += `</div><div id="case-opening-area"></div>`;
   document.getElementById('main-content').innerHTML = html;
+
+  document.getElementById('show-rules-btn').onclick = showRulesModal;
+
   document.querySelectorAll('.open-pack-btn').forEach(btn => {
     btn.onclick = () => showPackModal(parseInt(btn.dataset.pack, 10));
   });
@@ -168,6 +166,59 @@ function renderPackages() {
       showPackModal(parseInt(idx, 10));
     };
   });
+}
+
+function showRulesModal() {
+  // Eğer eski modal açıksa tekrar eklemesin
+  if (document.getElementById("rules-modal")) return;
+
+  const modal = document.createElement('div');
+  modal.id = "rules-modal";
+  modal.className = "modal-overlay";
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width: 500px; text-align: left; position: relative;">
+      <button
+        style="position:absolute;top:12px;right:18px;font-size:1.3rem;background:none;color:var(--accent);border:none;cursor:pointer;"
+        id="close-rules-modal"
+        title="Kapat"
+        aria-label="Kapat"
+      >✕</button>
+      <h2 style="color:var(--accent);margin-bottom:18px;text-align:center;">Oyun Kuralları</h2>
+      <div style="color:var(--text-main);font-size:1.08rem;line-height:1.6;" id="rules-content">
+        <!-- Buraya oyun kurallarını yazabilirsin -->
+        <p>1- Bu turnuvadan kimseye bahsetme.</p>
+        <p>2- İlk kuralı asla çiğneme.</p>
+        <p>3- Her Kill: 120 puan </p>
+        <p>4- Her Asist: 50 puan </p>
+        <p>5- Her Ölüm: -20 puan </p>
+        <p>6- Her Ace: 600 puan </p>
+        <p>7- Her Knife Kill Ekstra: 200 puan </p>
+        <p>8- Maçı Kazanan Takımda Yer Almak: 1000 puan </p>
+      </div>
+    </div>
+  `;
+
+  // Modal arka planı için stil ekle
+  modal.style.position = "fixed";
+  modal.style.top = "0";
+  modal.style.left = "0";
+  modal.style.right = "0";
+  modal.style.bottom = "0";
+  modal.style.background = "rgba(19,17,41, 0.97)";
+  modal.style.zIndex = "150";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+
+  // Kapatma butonu ve arkaplana tıklayınca kapatma
+  modal.querySelector("#close-rules-modal").onclick = () => {
+    document.body.removeChild(modal);
+  };
+  modal.onclick = (e) => {
+    if (e.target === modal) document.body.removeChild(modal);
+  };
+
+  document.body.appendChild(modal);
 }
 
 function showPackModal(packIdx) {
